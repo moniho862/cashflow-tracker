@@ -26,7 +26,7 @@
       background: var(--bg);
       color: var(--text-main);
       min-height: 100vh;
-      padding-bottom: 260px; /* 預留給底部浮動視窗的高度 */
+      padding-bottom: 260px; /* 預留給底部面板高度 */
     }
 
     header {
@@ -55,7 +55,6 @@
       color: var(--text-sub);
     }
 
-    /* 浮動底部面板 */
     .panel {
       position: fixed;
       left: 0;
@@ -277,16 +276,15 @@
 <body>
   <header>
     <h1>每月流水記錄</h1>
-    <div class="subtitle">手機版 · 收入 / 支出 / 固定支出 / 總計</div>
+    <div class="subtitle">手機版 · 收入 / 支出 / 固定支出 / 總計 · 訂閱存在試算表</div>
   </header>
 
   <div class="top-summary">
-    在下方面板切換頁面：先輸入收入與支出，再到「固定支出」設定分期與訂閱，最後到「總計」查看並儲存當月紀錄。
+    下方面板切換頁面：先輸入收入與支出，再到「固定支出」設定分期與訂閱，最後到「總計」查看並儲存當月紀錄。
   </div>
 
-  <!-- 浮動底部面板 -->
+  <!-- 底部浮動面板 -->
   <div class="panel">
-    <!-- Tab 列 -->
     <div class="panel-tabs">
       <button class="tab-btn active" data-tab="income">收入</button>
       <button class="tab-btn" data-tab="expense">支出</button>
@@ -328,7 +326,7 @@
 
         <div class="card">
           <div class="card-title">
-            <span>本次收入列表</span>
+            <span>本次收入列表（暫存在此裝置）</span>
           </div>
           <table>
             <thead>
@@ -377,7 +375,7 @@
 
         <div class="card">
           <div class="card-title">
-            <span>本次支出列表</span>
+            <span>本次支出列表（暫存在此裝置）</span>
           </div>
           <table>
             <thead>
@@ -395,7 +393,7 @@
 
       <!-- 固定支出 TAB -->
       <div class="tab-page" id="tab-fixed">
-        <!-- 其他固定支出 -->
+        <!-- 其他固定 -->
         <div class="card">
           <div class="card-title">
             <span>其他固定支出</span>
@@ -412,7 +410,7 @@
         <div class="card">
           <div class="card-title">
             <span>分期支出</span>
-            <span class="sub">會自動算每期金額</span>
+            <span class="sub">自動計算每期金額</span>
           </div>
 
           <div class="row">
@@ -441,11 +439,11 @@
           </div>
         </div>
 
-        <!-- 訂閱清單 -->
+        <!-- 訂閱清單（存在試算表） -->
         <div class="card">
           <div class="card-title">
             <span>訂閱清單</span>
-            <span class="badge">會自動每月計入</span>
+            <span class="badge">存於試算表</span>
           </div>
 
           <div class="row">
@@ -504,7 +502,7 @@
 
         <div class="card">
           <div class="card-title">
-            <span>本月收入 / 支出總覽</span>
+            <span>本月收入 / 變動支出</span>
           </div>
 
           <div class="result-line">
@@ -574,18 +572,15 @@
     // 你的 Apps Script 部署網址
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxLEufK5CDeb3_Yykh_GxaR524eoYodeeFSgS-vouQP-UNSRwbrxdRJ4CkOYZOcpJnD/exec';
 
-    // 狀態
-    let incomes = [];     // {id, date, amount, note}
-    let expenses = [];    // {id, date, amount, note}
+    // ---- 狀態 ----
+    let incomes = [];       // {id, date, amount, note}
+    let expenses = [];      // {id, date, amount, note}
     let subscriptions = []; // {id, name, amount, active}
     let nextIncomeId = 1;
     let nextExpenseId = 1;
-    let nextSubId = 1;
-    let editingSubId = null;
+    let editingSubId = null; // 目前在編輯哪一個訂閱（id），null 代表新增模式
 
-    const SUBS_KEY = 'cashflow_subscriptions_v1';
-
-    // 元件取得
+    // ---- DOM 取得 ----
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPages = document.querySelectorAll('.tab-page');
 
@@ -624,7 +619,7 @@
     const remainAfterAllSpan = document.getElementById('remainAfterAll');
     const summaryMsgDiv = document.getElementById('summaryMsg');
 
-    // Tab 切換
+    // ---- Tab 切換 ----
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.tab;
@@ -635,7 +630,7 @@
       });
     });
 
-    // 收入相關
+    // ---- 收入 ----
     document.getElementById('addIncomeBtn').addEventListener('click', () => {
       const date = incomeDateInput.value;
       const amount = Number(incomeAmountInput.value) || 0;
@@ -684,7 +679,7 @@
       });
     }
 
-    // 支出相關
+    // ---- 支出 ----
     document.getElementById('addExpenseBtn').addEventListener('click', () => {
       const date = expenseDateInput.value;
       const amount = Number(expenseAmountInput.value) || 0;
@@ -733,26 +728,31 @@
       });
     }
 
-    // 訂閱 localStorage
-    function loadSubscriptions() {
+    // ---- 訂閱清單：從試算表載入 ----
+    async function loadSubscriptionsFromSheet() {
       try {
-        const data = localStorage.getItem(SUBS_KEY);
-        if (data) {
-          const arr = JSON.parse(data);
-          subscriptions = arr;
-          const maxId = arr.reduce((max, s) => Math.max(max, s.id || 0), 0);
-          nextSubId = maxId + 1;
+        subMsgDiv.textContent = '讀取訂閱清單中...';
+        subMsgDiv.classList.remove('error');
+
+        const res = await fetch(SCRIPT_URL + '?action=listSubscriptions');
+        const data = await res.json();
+
+        if (!data.success) {
+          throw new Error(data.error || '讀取失敗');
         }
-      } catch (e) {
-        console.error('loadSubscriptions error', e);
-        subscriptions = [];
+
+        subscriptions = data.data || [];
+        renderSubTable();
+        updateSummary();
+        subMsgDiv.textContent = `已從試算表載入 ${subscriptions.length} 筆訂閱。`;
+      } catch (err) {
+        console.error(err);
+        subMsgDiv.textContent = '讀取訂閱清單失敗：' + err.message;
+        subMsgDiv.classList.add('error');
       }
     }
 
-    function saveSubscriptions() {
-      localStorage.setItem(SUBS_KEY, JSON.stringify(subscriptions));
-    }
-
+    // ---- 訂閱表單 ----
     function clearSubForm() {
       editingSubId = null;
       subNameInput.value = '';
@@ -763,9 +763,9 @@
       subMsgDiv.classList.remove('error');
     }
 
-    clearSubFormBtn.addEventListener('click', clearSubForm);
+    document.getElementById('clearSubFormBtn').addEventListener('click', clearSubForm);
 
-    saveSubBtn.addEventListener('click', () => {
+    document.getElementById('saveSubBtn').addEventListener('click', async () => {
       const name = subNameInput.value.trim();
       const amount = Number(subAmountInput.value) || 0;
       const active = subActiveInput.checked;
@@ -776,31 +776,45 @@
         return;
       }
 
-      if (editingSubId) {
-        // 更新
-        const idx = subscriptions.findIndex(s => s.id === editingSubId);
+      let id = editingSubId;
+      if (!id) {
+        // 新增時由前端產 ID（時間戳＋亂數）
+        id = 'sub_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+        subscriptions.push({ id, name, amount, active });
+        subMsgDiv.textContent = '已新增訂閱（已送出儲存請求）';
+      } else {
+        const idx = subscriptions.findIndex(s => s.id === id);
         if (idx >= 0) {
           subscriptions[idx].name = name;
           subscriptions[idx].amount = amount;
           subscriptions[idx].active = active;
+          subMsgDiv.textContent = '已更新訂閱（已送出儲存請求）';
         }
-        subMsgDiv.textContent = '已更新訂閱';
-      } else {
-        // 新增
-        subscriptions.push({
-          id: nextSubId++,
-          name,
-          amount,
-          active
-        });
-        subMsgDiv.textContent = '已新增訂閱';
       }
 
       subMsgDiv.classList.remove('error');
-      saveSubscriptions();
       renderSubTable();
       updateSummary();
       clearSubForm();
+
+      // 呼叫後端儲存（不處理回傳內容）
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'saveSubscription',
+            id,
+            name,
+            amount,
+            active
+          })
+        });
+      } catch (err) {
+        console.error(err);
+        // 即使失敗，畫面先不還原，避免使用體驗太差
+      }
     });
 
     function renderSubTable() {
@@ -823,13 +837,28 @@
 
       // 啟用切換
       subTableBody.querySelectorAll('.sub-active-toggle').forEach(cb => {
-        cb.addEventListener('change', () => {
-          const id = Number(cb.dataset.id);
+        cb.addEventListener('change', async () => {
+          const id = cb.dataset.id;
           const s = subscriptions.find(x => x.id === id);
           if (s) {
             s.active = cb.checked;
-            saveSubscriptions();
             updateSummary();
+            try {
+              await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  type: 'saveSubscription',
+                  id: s.id,
+                  name: s.name,
+                  amount: s.amount,
+                  active: s.active
+                })
+              });
+            } catch (err) {
+              console.error(err);
+            }
           }
         });
       });
@@ -837,7 +866,7 @@
       // 編輯
       subTableBody.querySelectorAll('.sub-edit').forEach(btn => {
         btn.addEventListener('click', () => {
-          const id = Number(btn.dataset.id);
+          const id = btn.dataset.id;
           const s = subscriptions.find(x => x.id === id);
           if (s) {
             editingSubId = id;
@@ -853,18 +882,31 @@
 
       // 刪除
       subTableBody.querySelectorAll('.sub-del').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = Number(btn.dataset.id);
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
           if (!confirm('確定要刪除這筆訂閱嗎？')) return;
           subscriptions = subscriptions.filter(s => s.id !== id);
-          saveSubscriptions();
           renderSubTable();
           updateSummary();
+
+          try {
+            await fetch(SCRIPT_URL, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'deleteSubscription',
+                id
+              })
+            });
+          } catch (err) {
+            console.error(err);
+          }
         });
       });
     }
 
-    // 分期計算
+    // ---- 分期計算 ----
     function calculateInstallment() {
       const total = Number(installmentTotalInput.value) || 0;
       const months = Number(installmentMonthsInput.value) || 0;
@@ -877,15 +919,11 @@
     }
 
     [installmentTotalInput, installmentMonthsInput, includeInstallmentCheckbox, fixedOtherInput].forEach(el => {
-      el.addEventListener('input', () => {
-        calculateInstallment();
-      });
-      el.addEventListener('change', () => {
-        calculateInstallment();
-      });
+      el.addEventListener('input', calculateInstallment);
+      el.addEventListener('change', calculateInstallment);
     });
 
-    // 總計計算
+    // ---- 總計計算 ----
     function updateSummary() {
       const monthStr = summaryMonthInput.value; // yyyy-mm
       let incomeTotal = 0;
@@ -940,7 +978,7 @@
       updateSummary();
     });
 
-    // 儲存到試算表
+    // ---- 儲存當月紀錄到試算表 ----
     document.getElementById('saveToSheetBtn').addEventListener('click', async () => {
       const month = summaryMonthInput.value;
       if (!month) {
@@ -949,7 +987,6 @@
         return;
       }
 
-      // 先更新一次，確保顯示數字是最新的
       updateSummary();
 
       const incomeTotal = Number(sumIncomeSpan.textContent) || 0;
@@ -964,7 +1001,7 @@
         return;
       }
 
-      // 往 Apps Script 丟的 fixedOther = 其他固定 + 訂閱
+      // 丟給後端的 fixedOther = 其他固定 + 訂閱
       const fixedOtherForSheet = fixedOther + subTotal;
 
       summaryMsgDiv.textContent = '儲存中...';
@@ -973,11 +1010,10 @@
       try {
         await fetch(SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors', // 保持簡單，不處理 CORS 回應
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            type: 'saveSummary',
             month,
             income: incomeTotal,
             fixedOther: fixedOtherForSheet,
@@ -994,16 +1030,15 @@
       }
     });
 
-    // 初始化
+    // ---- 初始化 ----
     function init() {
-      // 預設 summary 月份 = 今天所在月份
+      // 預設總計月份 = 今天所在月份
       const today = new Date();
       const ym = today.toISOString().slice(0, 7); // yyyy-mm
       summaryMonthInput.value = ym;
 
-      loadSubscriptions();
-      renderSubTable();
       calculateInstallment();
+      loadSubscriptionsFromSheet(); // 從試算表載入訂閱
       updateSummary();
     }
 
