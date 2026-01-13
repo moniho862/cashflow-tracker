@@ -25,66 +25,130 @@
       padding: 0;
       background: var(--bg);
       color: var(--text-main);
+      min-height: 100vh;
+      padding-bottom: 260px; /* 預留給底部浮動視窗的高度 */
     }
 
-    .container {
-      max-width: 480px;   /* 手機為主，平板也不會太寬 */
+    header {
+      padding: 16px 12px 8px;
+      max-width: 480px;
       margin: 0 auto;
-      padding: 16px 12px 24px;
     }
 
     h1 {
-      text-align: center;
       font-size: 20px;
-      margin: 8px 0 12px;
+      margin: 0 0 4px;
+      text-align: center;
     }
 
-    h2 {
-      font-size: 16px;
-      margin: 16px 0 8px;
+    .subtitle {
+      font-size: 12px;
+      color: var(--text-sub);
+      text-align: center;
+    }
+
+    .top-summary {
+      max-width: 480px;
+      margin: 8px auto 0;
+      padding: 8px 12px 0;
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    /* 浮動底部面板 */
+    .panel {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+      border-top: 1px solid var(--border);
+      padding: 8px 8px 12px;
+    }
+
+    .panel-inner {
+      max-height: 240px;
+      overflow-y: auto;
+      padding: 4px 4px 0;
+    }
+
+    .panel-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 6px 4px;
+      font-size: 13px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-sub);
+      font-weight: 500;
+    }
+
+    .tab-btn.active {
+      background: #e0edff;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+
+    .tab-page {
+      display: none;
+      font-size: 13px;
+    }
+
+    .tab-page.active {
+      display: block;
     }
 
     .card {
       background: var(--card-bg);
       border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      padding: 8px;
+      margin-bottom: 8px;
       border: 1px solid var(--border);
     }
 
     .card-title {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
     .card-title span.sub {
-      font-size: 12px;
+      font-size: 11px;
       color: var(--text-sub);
       font-weight: 400;
     }
 
     label {
       display: block;
-      margin-top: 8px;
-      font-size: 13px;
+      margin-top: 6px;
+      font-size: 12px;
       font-weight: 500;
     }
 
-    input {
+    input, select {
       margin-top: 4px;
-      padding: 8px;
+      padding: 6px;
       width: 100%;
       border-radius: 8px;
       border: 1px solid var(--border);
-      font-size: 14px;
+      font-size: 13px;
     }
 
-    input:focus {
+    input:focus, select:focus {
       outline: none;
       border-color: var(--primary);
       box-shadow: 0 0 0 1px rgba(37,99,235,0.2);
@@ -92,82 +156,23 @@
 
     .row {
       display: flex;
-      gap: 8px;
+      gap: 6px;
     }
 
     .row > .col {
       flex: 1;
     }
 
-    .result-line {
-      display: flex;
-      justify-content: space-between;
-      font-size: 14px;
-      margin-top: 6px;
-    }
-
-    .result-label {
-      color: var(--text-sub);
-    }
-
-    .result-value {
-      font-weight: 600;
-    }
-
-    .result-value.highlight {
-      color: var(--primary);
-      font-size: 16px;
-    }
-
-    button {
-      margin-top: 10px;
-      padding: 9px 12px;
-      cursor: pointer;
-      border-radius: 999px;
-      border: none;
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      width: 100%;
-    }
-
-    .btn-secondary {
-      background: #e5e7eb;
-      color: #111827;
-      width: 100%;
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .msg {
-      margin-top: 8px;
-      min-height: 1.4em;
-      font-size: 13px;
-      color: var(--text-sub);
-    }
-
-    .msg.error {
-      color: #b91c1c;
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 8px;
-      font-size: 12px;
+      margin-top: 4px;
+      font-size: 11px;
     }
 
     th, td {
       border: 1px solid var(--border);
-      padding: 4px;
+      padding: 3px;
       text-align: center;
       white-space: nowrap;
     }
@@ -177,154 +182,391 @@
       font-weight: 600;
     }
 
-    .badge {
-      display: inline-block;
-      padding: 2px 6px;
+    .btn {
+      margin-top: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
       border-radius: 999px;
-      background: #dbeafe;
-      color: #1d4ed8;
-      font-size: 11px;
+      border: none;
+      font-size: 13px;
       font-weight: 600;
     }
 
-    .checkbox-row {
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .btn-small {
+      padding: 3px 6px;
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      cursor: pointer;
+    }
+
+    .btn-row {
       display: flex;
-      align-items: center;
-      margin-top: 6px;
       gap: 6px;
+      margin-top: 6px;
+    }
+
+    .msg {
+      margin-top: 4px;
+      min-height: 1.4em;
       font-size: 12px;
       color: var(--text-sub);
     }
 
-    .checkbox-row input[type="checkbox"] {
+    .msg.error {
+      color: #b91c1c;
+    }
+
+    .result-line {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 3px;
+    }
+
+    .result-label {
+      color: var(--text-sub);
+      font-size: 12px;
+    }
+
+    .result-value {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .result-value.highlight {
+      color: var(--primary);
+      font-size: 15px;
+    }
+
+    .checkbox-inline {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .checkbox-inline input[type="checkbox"] {
       width: auto;
       margin-top: 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 10px;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <header>
     <h1>每月流水記錄</h1>
+    <div class="subtitle">手機版 · 收入 / 支出 / 固定支出 / 總計</div>
+  </header>
 
-    <!-- 基本資料 -->
-    <div class="card">
-      <div class="card-title">
-        <span>基本資料</span>
-        <span class="sub">設定本月份與收入</span>
-      </div>
+  <div class="top-summary">
+    在下方面板切換頁面：先輸入收入與支出，再到「固定支出」設定分期與訂閱，最後到「總計」查看並儲存當月紀錄。
+  </div>
 
-      <label>
-        月份
-        <input type="month" id="month">
-      </label>
-
-      <label>
-        本月收入
-        <input type="number" id="income" placeholder="輸入本月總收入">
-      </label>
+  <!-- 浮動底部面板 -->
+  <div class="panel">
+    <!-- Tab 列 -->
+    <div class="panel-tabs">
+      <button class="tab-btn active" data-tab="income">收入</button>
+      <button class="tab-btn" data-tab="expense">支出</button>
+      <button class="tab-btn" data-tab="fixed">固定支出</button>
+      <button class="tab-btn" data-tab="summary">總計</button>
     </div>
 
-    <!-- 固定支出（不含分期） -->
-    <div class="card">
-      <div class="card-title">
-        <span>其他固定支出</span>
-        <span class="sub">例：房租、保險、車貸…</span>
-      </div>
+    <div class="panel-inner">
+      <!-- 收入 TAB -->
+      <div class="tab-page active" id="tab-income">
+        <div class="card">
+          <div class="card-title">
+            <span>新增收入</span>
+            <span class="sub">可以同月多筆入帳</span>
+          </div>
 
-      <label>
-        其他固定支出總額
-        <input type="number" id="fixedOther" placeholder="輸入除分期以外的固定支出總額">
-      </label>
-    </div>
+          <div class="row">
+            <div class="col">
+              <label>
+                日期
+                <input type="date" id="incomeDate">
+              </label>
+            </div>
+            <div class="col">
+              <label>
+                金額
+                <input type="number" id="incomeAmount" placeholder="例如 30000">
+              </label>
+            </div>
+          </div>
 
-    <!-- 分期計算 -->
-    <div class="card">
-      <div class="card-title">
-        <span>分期計算</span>
-        <span class="badge">可選</span>
-      </div>
-
-      <div class="row">
-        <div class="col">
           <label>
-            分期總金額
-            <input type="number" id="installmentTotal" placeholder="例如 12000">
+            備註（選填）
+            <input type="text" id="incomeNote" placeholder="例如：正職薪水 / 獎金">
+          </label>
+
+          <button class="btn btn-primary" id="addIncomeBtn">新增收入</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>本次收入列表</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>金額</th>
+                <th>備註</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="incomeTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 支出 TAB -->
+      <div class="tab-page" id="tab-expense">
+        <div class="card">
+          <div class="card-title">
+            <span>新增支出</span>
+            <span class="sub">一般 / 變動支出</span>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>
+                日期
+                <input type="date" id="expenseDate">
+              </label>
+            </div>
+            <div class="col">
+              <label>
+                金額
+                <input type="number" id="expenseAmount" placeholder="例如 500">
+              </label>
+            </div>
+          </div>
+
+          <label>
+            備註（選填）
+            <input type="text" id="expenseNote" placeholder="例如：外食 / 娛樂">
+          </label>
+
+          <button class="btn btn-primary" id="addExpenseBtn">新增支出</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>本次支出列表</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>金額</th>
+                <th>備註</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="expenseTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 固定支出 TAB -->
+      <div class="tab-page" id="tab-fixed">
+        <!-- 其他固定支出 -->
+        <div class="card">
+          <div class="card-title">
+            <span>其他固定支出</span>
+            <span class="sub">房租、保險、貸款等總額</span>
+          </div>
+
+          <label>
+            每月其他固定支出總額
+            <input type="number" id="fixedOther" placeholder="例如：房租 + 保險 + 車貸">
           </label>
         </div>
-        <div class="col">
-          <label>
-            分期期數（月）
-            <input type="number" id="installmentMonths" placeholder="例如 6">
-          </label>
+
+        <!-- 分期 -->
+        <div class="card">
+          <div class="card-title">
+            <span>分期支出</span>
+            <span class="sub">會自動算每期金額</span>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>
+                分期總金額
+                <input type="number" id="installmentTotal" placeholder="例如 12000">
+              </label>
+            </div>
+            <div class="col">
+              <label>
+                期數（月）
+                <input type="number" id="installmentMonths" placeholder="例如 6">
+              </label>
+            </div>
+          </div>
+
+          <div class="result-line">
+            <span class="result-label">每期金額</span>
+            <span class="result-value" id="installmentMonthly">0</span>
+          </div>
+
+          <div class="checkbox-inline">
+            <input type="checkbox" id="includeInstallment" checked>
+            <label for="includeInstallment">本月要計入這筆分期支出</label>
+          </div>
+        </div>
+
+        <!-- 訂閱清單 -->
+        <div class="card">
+          <div class="card-title">
+            <span>訂閱清單</span>
+            <span class="badge">會自動每月計入</span>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <label>
+                訂閱名稱
+                <input type="text" id="subName" placeholder="例如：Netflix">
+              </label>
+            </div>
+            <div class="col">
+              <label>
+                月費
+                <input type="number" id="subAmount" placeholder="例如 390">
+              </label>
+            </div>
+          </div>
+
+          <div class="checkbox-inline">
+            <input type="checkbox" id="subActive" checked>
+            <label for="subActive">啟用（計入固定支出）</label>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-secondary" id="clearSubFormBtn">清空表單</button>
+            <button class="btn btn-primary" id="saveSubBtn">新增訂閱</button>
+          </div>
+
+          <div class="msg" id="subMsg"></div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>名稱</th>
+                <th>月費</th>
+                <th>啟用</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="subTableBody"></tbody>
+          </table>
         </div>
       </div>
 
-      <div class="result-line">
-        <span class="result-label">每期應付金額</span>
-        <span class="result-value" id="installmentMonthly">0</span>
+      <!-- 總計 TAB -->
+      <div class="tab-page" id="tab-summary">
+        <div class="card">
+          <div class="card-title">
+            <span>選擇要統計的月份</span>
+          </div>
+
+          <label>
+            月份
+            <input type="month" id="summaryMonth">
+          </label>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>本月收入 / 支出總覽</span>
+          </div>
+
+          <div class="result-line">
+            <span class="result-label">總收入</span>
+            <span class="result-value" id="sumIncome">0</span>
+          </div>
+
+          <div class="result-line">
+            <span class="result-label">變動支出（一般支出）</span>
+            <span class="result-value" id="sumExpense">0</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>本月固定支出</span>
+          </div>
+
+          <div class="result-line">
+            <span class="result-label">其他固定支出</span>
+            <span class="result-value" id="sumFixedOther">0</span>
+          </div>
+
+          <div class="result-line">
+            <span class="result-label">訂閱支出（全部啟用）</span>
+            <span class="result-value" id="sumSubscription">0</span>
+          </div>
+
+          <div class="result-line">
+            <span class="result-label">分期支出（本期）</span>
+            <span class="result-value" id="sumInstallment">0</span>
+          </div>
+
+          <div class="result-line">
+            <span class="result-label">固定支出總額</span>
+            <span class="result-value" id="sumFixedTotal">0</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>本月剩餘</span>
+          </div>
+
+          <div class="result-line">
+            <span class="result-label">收入 − 固定支出</span>
+            <span class="result-value highlight" id="remainAfterFixed">0</span>
+          </div>
+
+          <div class="result-line">
+            <span class="result-label">收入 − 固定支出 − 變動支出</span>
+            <span class="result-value" id="remainAfterAll">0</span>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-secondary" id="recalcSummaryBtn">重新計算</button>
+            <button class="btn btn-primary" id="saveToSheetBtn">儲存當月記錄到試算表</button>
+          </div>
+
+          <div class="msg" id="summaryMsg"></div>
+        </div>
       </div>
-
-      <div class="checkbox-row">
-        <input type="checkbox" id="includeInstallment" checked>
-        <label for="includeInstallment">本月要計入這筆分期支出</label>
-      </div>
-    </div>
-
-    <!-- 本月總結 -->
-    <div class="card">
-      <div class="card-title">
-        <span>本月總結</span>
-      </div>
-
-      <div class="result-line">
-        <span class="result-label">其他固定支出</span>
-        <span class="result-value" id="summaryFixedOther">0</span>
-      </div>
-
-      <div class="result-line">
-        <span class="result-label">分期支出（本期）</span>
-        <span class="result-value" id="summaryInstallment">0</span>
-      </div>
-
-      <div class="result-line">
-        <span class="result-label">固定支出總額</span>
-        <span class="result-value" id="summaryFixedTotal">0</span>
-      </div>
-
-      <div class="result-line">
-        <span class="result-label">本月剩餘資產</span>
-        <span class="result-value highlight" id="summaryRemain">0</span>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn-secondary" id="calcBtn">重新計算</button>
-        <button class="btn-primary" id="saveBtn">儲存到 Google 試算表</button>
-      </div>
-
-      <div class="msg" id="msg"></div>
-    </div>
-
-    <!-- 前端暫存紀錄 -->
-    <div class="card">
-      <div class="card-title">
-        <span>本次輸入紀錄（僅前端顯示）</span>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>時間</th>
-            <th>月份</th>
-            <th>收入</th>
-            <th>其他固定</th>
-            <th>分期</th>
-            <th>固定總額</th>
-            <th>剩餘</th>
-          </tr>
-        </thead>
-        <tbody id="recordsBody">
-        </tbody>
-      </table>
     </div>
   </div>
 
@@ -332,134 +574,440 @@
     // 你的 Apps Script 部署網址
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxLEufK5CDeb3_Yykh_GxaR524eoYodeeFSgS-vouQP-UNSRwbrxdRJ4CkOYZOcpJnD/exec';
 
-    const monthInput = document.getElementById('month');
-    const incomeInput = document.getElementById('income');
+    // 狀態
+    let incomes = [];     // {id, date, amount, note}
+    let expenses = [];    // {id, date, amount, note}
+    let subscriptions = []; // {id, name, amount, active}
+    let nextIncomeId = 1;
+    let nextExpenseId = 1;
+    let nextSubId = 1;
+    let editingSubId = null;
+
+    const SUBS_KEY = 'cashflow_subscriptions_v1';
+
+    // 元件取得
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPages = document.querySelectorAll('.tab-page');
+
+    const incomeDateInput = document.getElementById('incomeDate');
+    const incomeAmountInput = document.getElementById('incomeAmount');
+    const incomeNoteInput = document.getElementById('incomeNote');
+    const incomeTableBody = document.getElementById('incomeTableBody');
+
+    const expenseDateInput = document.getElementById('expenseDate');
+    const expenseAmountInput = document.getElementById('expenseAmount');
+    const expenseNoteInput = document.getElementById('expenseNote');
+    const expenseTableBody = document.getElementById('expenseTableBody');
+
     const fixedOtherInput = document.getElementById('fixedOther');
     const installmentTotalInput = document.getElementById('installmentTotal');
     const installmentMonthsInput = document.getElementById('installmentMonths');
+    const installmentMonthlySpan = document.getElementById('installmentMonthly');
     const includeInstallmentCheckbox = document.getElementById('includeInstallment');
 
-    const installmentMonthlySpan = document.getElementById('installmentMonthly');
-    const summaryFixedOtherSpan = document.getElementById('summaryFixedOther');
-    const summaryInstallmentSpan = document.getElementById('summaryInstallment');
-    const summaryFixedTotalSpan = document.getElementById('summaryFixedTotal');
-    const summaryRemainSpan = document.getElementById('summaryRemain');
-    const msgDiv = document.getElementById('msg');
-    const recordsBody = document.getElementById('recordsBody');
+    const subNameInput = document.getElementById('subName');
+    const subAmountInput = document.getElementById('subAmount');
+    const subActiveInput = document.getElementById('subActive');
+    const subMsgDiv = document.getElementById('subMsg');
+    const subTableBody = document.getElementById('subTableBody');
+    const clearSubFormBtn = document.getElementById('clearSubFormBtn');
+    const saveSubBtn = document.getElementById('saveSubBtn');
 
-    function calculateAll() {
-      const income = Number(incomeInput.value) || 0;
-      const fixedOther = Number(fixedOtherInput.value) || 0;
+    const summaryMonthInput = document.getElementById('summaryMonth');
+    const sumIncomeSpan = document.getElementById('sumIncome');
+    const sumExpenseSpan = document.getElementById('sumExpense');
+    const sumFixedOtherSpan = document.getElementById('sumFixedOther');
+    const sumSubscriptionSpan = document.getElementById('sumSubscription');
+    const sumInstallmentSpan = document.getElementById('sumInstallment');
+    const sumFixedTotalSpan = document.getElementById('sumFixedTotal');
+    const remainAfterFixedSpan = document.getElementById('remainAfterFixed');
+    const remainAfterAllSpan = document.getElementById('remainAfterAll');
+    const summaryMsgDiv = document.getElementById('summaryMsg');
+
+    // Tab 切換
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabPages.forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + target).classList.add('active');
+      });
+    });
+
+    // 收入相關
+    document.getElementById('addIncomeBtn').addEventListener('click', () => {
+      const date = incomeDateInput.value;
+      const amount = Number(incomeAmountInput.value) || 0;
+      const note = incomeNoteInput.value.trim();
+
+      if (!date || !amount) {
+        alert('請輸入收入日期與金額');
+        return;
+      }
+
+      incomes.push({
+        id: nextIncomeId++,
+        date,
+        amount,
+        note
+      });
+
+      incomeDateInput.value = '';
+      incomeAmountInput.value = '';
+      incomeNoteInput.value = '';
+
+      renderIncomeTable();
+      updateSummary();
+    });
+
+    function renderIncomeTable() {
+      incomeTableBody.innerHTML = '';
+      incomes.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.date}</td>
+          <td>${item.amount}</td>
+          <td>${item.note || ''}</td>
+          <td><button class="btn-small" data-id="${item.id}">刪除</button></td>
+        `;
+        incomeTableBody.appendChild(tr);
+      });
+
+      incomeTableBody.querySelectorAll('.btn-small').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.id);
+          incomes = incomes.filter(i => i.id !== id);
+          renderIncomeTable();
+          updateSummary();
+        });
+      });
+    }
+
+    // 支出相關
+    document.getElementById('addExpenseBtn').addEventListener('click', () => {
+      const date = expenseDateInput.value;
+      const amount = Number(expenseAmountInput.value) || 0;
+      const note = expenseNoteInput.value.trim();
+
+      if (!date || !amount) {
+        alert('請輸入支出日期與金額');
+        return;
+      }
+
+      expenses.push({
+        id: nextExpenseId++,
+        date,
+        amount,
+        note
+      });
+
+      expenseDateInput.value = '';
+      expenseAmountInput.value = '';
+      expenseNoteInput.value = '';
+
+      renderExpenseTable();
+      updateSummary();
+    });
+
+    function renderExpenseTable() {
+      expenseTableBody.innerHTML = '';
+      expenses.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.date}</td>
+          <td>${item.amount}</td>
+          <td>${item.note || ''}</td>
+          <td><button class="btn-small" data-id="${item.id}">刪除</button></td>
+        `;
+        expenseTableBody.appendChild(tr);
+      });
+
+      expenseTableBody.querySelectorAll('.btn-small').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.id);
+          expenses = expenses.filter(e => e.id !== id);
+          renderExpenseTable();
+          updateSummary();
+        });
+      });
+    }
+
+    // 訂閱 localStorage
+    function loadSubscriptions() {
+      try {
+        const data = localStorage.getItem(SUBS_KEY);
+        if (data) {
+          const arr = JSON.parse(data);
+          subscriptions = arr;
+          const maxId = arr.reduce((max, s) => Math.max(max, s.id || 0), 0);
+          nextSubId = maxId + 1;
+        }
+      } catch (e) {
+        console.error('loadSubscriptions error', e);
+        subscriptions = [];
+      }
+    }
+
+    function saveSubscriptions() {
+      localStorage.setItem(SUBS_KEY, JSON.stringify(subscriptions));
+    }
+
+    function clearSubForm() {
+      editingSubId = null;
+      subNameInput.value = '';
+      subAmountInput.value = '';
+      subActiveInput.checked = true;
+      saveSubBtn.textContent = '新增訂閱';
+      subMsgDiv.textContent = '';
+      subMsgDiv.classList.remove('error');
+    }
+
+    clearSubFormBtn.addEventListener('click', clearSubForm);
+
+    saveSubBtn.addEventListener('click', () => {
+      const name = subNameInput.value.trim();
+      const amount = Number(subAmountInput.value) || 0;
+      const active = subActiveInput.checked;
+
+      if (!name || !amount) {
+        subMsgDiv.textContent = '請輸入訂閱名稱與月費';
+        subMsgDiv.classList.add('error');
+        return;
+      }
+
+      if (editingSubId) {
+        // 更新
+        const idx = subscriptions.findIndex(s => s.id === editingSubId);
+        if (idx >= 0) {
+          subscriptions[idx].name = name;
+          subscriptions[idx].amount = amount;
+          subscriptions[idx].active = active;
+        }
+        subMsgDiv.textContent = '已更新訂閱';
+      } else {
+        // 新增
+        subscriptions.push({
+          id: nextSubId++,
+          name,
+          amount,
+          active
+        });
+        subMsgDiv.textContent = '已新增訂閱';
+      }
+
+      subMsgDiv.classList.remove('error');
+      saveSubscriptions();
+      renderSubTable();
+      updateSummary();
+      clearSubForm();
+    });
+
+    function renderSubTable() {
+      subTableBody.innerHTML = '';
+      subscriptions.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${s.name}</td>
+          <td>${s.amount}</td>
+          <td>
+            <input type="checkbox" data-id="${s.id}" class="sub-active-toggle" ${s.active ? 'checked' : ''}>
+          </td>
+          <td>
+            <button class="btn-small sub-edit" data-id="${s.id}">編輯</button>
+            <button class="btn-small sub-del" data-id="${s.id}">刪除</button>
+          </td>
+        `;
+        subTableBody.appendChild(tr);
+      });
+
+      // 啟用切換
+      subTableBody.querySelectorAll('.sub-active-toggle').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const id = Number(cb.dataset.id);
+          const s = subscriptions.find(x => x.id === id);
+          if (s) {
+            s.active = cb.checked;
+            saveSubscriptions();
+            updateSummary();
+          }
+        });
+      });
+
+      // 編輯
+      subTableBody.querySelectorAll('.sub-edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.id);
+          const s = subscriptions.find(x => x.id === id);
+          if (s) {
+            editingSubId = id;
+            subNameInput.value = s.name;
+            subAmountInput.value = s.amount;
+            subActiveInput.checked = s.active;
+            saveSubBtn.textContent = '更新訂閱';
+            subMsgDiv.textContent = '編輯模式：修改後按「更新訂閱」';
+            subMsgDiv.classList.remove('error');
+          }
+        });
+      });
+
+      // 刪除
+      subTableBody.querySelectorAll('.sub-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.id);
+          if (!confirm('確定要刪除這筆訂閱嗎？')) return;
+          subscriptions = subscriptions.filter(s => s.id !== id);
+          saveSubscriptions();
+          renderSubTable();
+          updateSummary();
+        });
+      });
+    }
+
+    // 分期計算
+    function calculateInstallment() {
       const total = Number(installmentTotalInput.value) || 0;
       const months = Number(installmentMonthsInput.value) || 0;
-
-      let installmentMonthly = 0;
+      let monthly = 0;
       if (total > 0 && months > 0) {
+        monthly = total / months;
+      }
+      installmentMonthlySpan.textContent = monthly ? monthly.toFixed(0) : '0';
+      updateSummary();
+    }
+
+    [installmentTotalInput, installmentMonthsInput, includeInstallmentCheckbox, fixedOtherInput].forEach(el => {
+      el.addEventListener('input', () => {
+        calculateInstallment();
+      });
+      el.addEventListener('change', () => {
+        calculateInstallment();
+      });
+    });
+
+    // 總計計算
+    function updateSummary() {
+      const monthStr = summaryMonthInput.value; // yyyy-mm
+      let incomeTotal = 0;
+      let expenseTotal = 0;
+
+      if (monthStr) {
+        incomes.forEach(i => {
+          if (i.date && i.date.startsWith(monthStr)) {
+            incomeTotal += i.amount;
+          }
+        });
+        expenses.forEach(e => {
+          if (e.date && e.date.startsWith(monthStr)) {
+            expenseTotal += e.amount;
+          }
+        });
+      }
+
+      const fixedOther = Number(fixedOtherInput.value) || 0;
+      const subTotal = subscriptions
+        .filter(s => s.active)
+        .reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
+
+      const total = Number(installmentTotalInput.value) || 0;
+      const months = Number(installmentMonthsInput.value) || 0;
+      let installmentMonthly = 0;
+      if (total > 0 && months > 0 && includeInstallmentCheckbox.checked) {
         installmentMonthly = total / months;
       }
 
-      // 顯示到一位小數，如果你想要整數可以改成 toFixed(0)
-      const installmentThisMonth = includeInstallmentCheckbox.checked ? installmentMonthly : 0;
+      const fixedTotal = fixedOther + subTotal + installmentMonthly;
+      const remainAfterFixed = incomeTotal - fixedTotal;
+      const remainAfterAll = incomeTotal - fixedTotal - expenseTotal;
 
-      installmentMonthlySpan.textContent = installmentMonthly ? installmentMonthly.toFixed(0) : '0';
-
-      summaryFixedOtherSpan.textContent = fixedOther.toFixed(0);
-      summaryInstallmentSpan.textContent = installmentThisMonth ? installmentThisMonth.toFixed(0) : '0';
-
-      const fixedTotal = fixedOther + installmentThisMonth;
-      const remain = income - fixedTotal;
-
-      summaryFixedTotalSpan.textContent = fixedTotal.toFixed(0);
-      summaryRemainSpan.textContent = remain.toFixed(0);
-
-      return {
-        income,
-        fixedOther,
-        installmentPayment: installmentThisMonth,
-        fixedTotal,
-        remain
-      };
+      sumIncomeSpan.textContent = incomeTotal.toFixed(0);
+      sumExpenseSpan.textContent = expenseTotal.toFixed(0);
+      sumFixedOtherSpan.textContent = fixedOther.toFixed(0);
+      sumSubscriptionSpan.textContent = subTotal.toFixed(0);
+      sumInstallmentSpan.textContent = installmentMonthly.toFixed(0);
+      sumFixedTotalSpan.textContent = fixedTotal.toFixed(0);
+      remainAfterFixedSpan.textContent = remainAfterFixed.toFixed(0);
+      remainAfterAllSpan.textContent = remainAfterAll.toFixed(0);
     }
 
-    // 即時重新計算
-    [incomeInput, fixedOtherInput, installmentTotalInput, installmentMonthsInput, includeInstallmentCheckbox].forEach(el => {
-      el.addEventListener('input', () => {
-        calculateAll();
-        msgDiv.textContent = '';
-        msgDiv.classList.remove('error');
-      });
-      el.addEventListener('change', () => {
-        calculateAll();
-        msgDiv.textContent = '';
-        msgDiv.classList.remove('error');
-      });
+    document.getElementById('recalcSummaryBtn').addEventListener('click', () => {
+      updateSummary();
+      summaryMsgDiv.textContent = '已重新計算。';
+      summaryMsgDiv.classList.remove('error');
     });
 
-    document.getElementById('calcBtn').addEventListener('click', () => {
-      calculateAll();
-      msgDiv.textContent = '已重新計算。';
-      msgDiv.classList.remove('error');
+    summaryMonthInput.addEventListener('change', () => {
+      updateSummary();
     });
 
-    document.getElementById('saveBtn').addEventListener('click', async () => {
-      const month = monthInput.value;
+    // 儲存到試算表
+    document.getElementById('saveToSheetBtn').addEventListener('click', async () => {
+      const month = summaryMonthInput.value;
       if (!month) {
-        msgDiv.textContent = '請先選擇月份';
-        msgDiv.classList.add('error');
+        summaryMsgDiv.textContent = '請先選擇要儲存的月份。';
+        summaryMsgDiv.classList.add('error');
         return;
       }
 
-      const calc = calculateAll();
-      const { income, fixedOther, installmentPayment, fixedTotal, remain } = calc;
+      // 先更新一次，確保顯示數字是最新的
+      updateSummary();
 
-      if (!income) {
-        msgDiv.textContent = '請先輸入本月收入';
-        msgDiv.classList.add('error');
+      const incomeTotal = Number(sumIncomeSpan.textContent) || 0;
+      const fixedOther = Number(sumFixedOtherSpan.textContent) || 0;
+      const subTotal = Number(sumSubscriptionSpan.textContent) || 0;
+      const installmentPayment = Number(sumInstallmentSpan.textContent) || 0;
+      const fixedTotal = Number(sumFixedTotalSpan.textContent) || 0;
+
+      if (!incomeTotal) {
+        summaryMsgDiv.textContent = '該月沒有收入資料，請先在「收入」頁新增。';
+        summaryMsgDiv.classList.add('error');
         return;
       }
 
-      msgDiv.textContent = '儲存中...';
-      msgDiv.classList.remove('error');
+      // 往 Apps Script 丟的 fixedOther = 其他固定 + 訂閱
+      const fixedOtherForSheet = fixedOther + subTotal;
+
+      summaryMsgDiv.textContent = '儲存中...';
+      summaryMsgDiv.classList.remove('error');
 
       try {
-        const res = await fetch(SCRIPT_URL, {
+        await fetch(SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors',
+          mode: 'no-cors', // 保持簡單，不處理 CORS 回應
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             month,
-            income,
-            fixedOther,
+            income: incomeTotal,
+            fixedOther: fixedOtherForSheet,
             installmentPayment,
             fixedTotal
           })
         });
 
-        msgDiv.textContent = '已送出儲存請求，請到 Google 試算表確認。';
-
-        const nowStr = new Date().toLocaleString();
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${nowStr}</td>
-          <td>${month}</td>
-          <td>${income.toFixed(0)}</td>
-          <td>${fixedOther.toFixed(0)}</td>
-          <td>${installmentPayment.toFixed(0)}</td>
-          <td>${fixedTotal.toFixed(0)}</td>
-          <td>${remain.toFixed(0)}</td>
-        `;
-        recordsBody.prepend(tr);
+        summaryMsgDiv.textContent = '已送出儲存請求，請到 Google 試算表確認。';
       } catch (err) {
         console.error(err);
-        msgDiv.textContent = '儲存失敗：' + err.message;
-        msgDiv.classList.add('error');
+        summaryMsgDiv.textContent = '儲存失敗：' + err.message;
+        summaryMsgDiv.classList.add('error');
       }
     });
 
-    // 初次載入時先算一次，避免空值
-    calculateAll();
+    // 初始化
+    function init() {
+      // 預設 summary 月份 = 今天所在月份
+      const today = new Date();
+      const ym = today.toISOString().slice(0, 7); // yyyy-mm
+      summaryMonthInput.value = ym;
+
+      loadSubscriptions();
+      renderSubTable();
+      calculateInstallment();
+      updateSummary();
+    }
+
+    init();
   </script>
 </body>
 </html>
