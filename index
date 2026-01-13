@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>每月流水記錄</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, "Microsoft JhengHei", sans-serif;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 0 10px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: 600;
+    }
+    input {
+      padding: 6px;
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 4px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 8px 16px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f5f5f5;
+    }
+    button + button {
+      margin-left: 8px;
+    }
+    .result {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .msg {
+      margin-top: 10px;
+      min-height: 1.2em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+      font-size: 14px;
+    }
+    th {
+      background: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <h1>每月流水記錄</h1>
+
+  <div>
+    <label>
+      月份
+      <input type="month" id="month">
+    </label>
+
+    <label>
+      本月收入
+      <input type="number" id="income" placeholder="輸入本月總收入">
+    </label>
+
+    <label>
+      固定支出（房租、保險、貸款等總和）
+      <input type="number" id="fixedExpense" placeholder="輸入本月固定支出總額">
+    </label>
+
+    <div class="result">
+      本月剩餘資產：<span id="remain">0</span>
+    </div>
+
+    <button id="calcBtn">計算</button>
+    <button id="saveBtn">計算並儲存到 Google 試算表</button>
+
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <h2>本次輸入紀錄（僅前端顯示）</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>記錄時間</th>
+        <th>月份</th>
+        <th>收入</th>
+        <th>固定支出</th>
+        <th>剩餘</th>
+      </tr>
+    </thead>
+    <tbody id="recordsBody">
+    </tbody>
+  </table>
+
+  <script>
+    // 已替換成你的 Apps Script 部署網址
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxLEufK5CDeb3_Yykh_GxaR524eoYodeeFSgS-vouQP-UNSRwbrxdRJ4CkOYZOcpJnD/exec';
+
+    const monthInput = document.getElementById('month');
+    const incomeInput = document.getElementById('income');
+    const fixedInput = document.getElementById('fixedExpense');
+    const remainSpan = document.getElementById('remain');
+    const msgDiv = document.getElementById('msg');
+    const recordsBody = document.getElementById('recordsBody');
+
+    function calculateRemain() {
+      const income = Number(incomeInput.value) || 0;
+      const fixed = Number(fixedInput.value) || 0;
+      const remain = income - fixed;
+      remainSpan.textContent = remain;
+      return remain;
+    }
+
+    document.getElementById('calcBtn').addEventListener('click', () => {
+      calculateRemain();
+      msgDiv.textContent = '';
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const month = monthInput.value;
+      const income = Number(incomeInput.value) || 0;
+      const fixedExpense = Number(fixedInput.value) || 0;
+      const remain = calculateRemain();
+
+      if (!month) {
+        msgDiv.textContent = '請先選擇月份';
+        return;
+      }
+
+      msgDiv.textContent = '儲存中...';
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          // Apps Script 預設沒有設定 CORS header，
+          // 為了避免 CORS 錯誤，這裡使用 no-cors。
+          // 這樣前端無法讀取回傳內容，但足夠用來觸發寫入動作。
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            month,
+            income,
+            fixedExpense
+          })
+        });
+
+        // no-cors 模式下無法確認實際回應內容，所以直接假設成功交給後端處理
+        msgDiv.textContent = '已送出儲存請求，請到 Google 試算表確認。';
+
+        const nowStr = new Date().toLocaleString();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${nowStr}</td>
+          <td>${month}</td>
+          <td>${income}</td>
+          <td>${fixedExpense}</td>
+          <td>${remain}</td>
+        `;
+        recordsBody.prepend(tr);
+
+      } catch (err) {
+        console.error(err);
+        msgDiv.textContent = '儲存失敗：' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
