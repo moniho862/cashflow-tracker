@@ -56,7 +56,7 @@
     main {
       max-width: 480px;
       margin: 0 auto;
-      padding: 8px 12px 80px; /* 下面預留空間給底部頁籤 */
+      padding: 8px 12px 80px; /* 預留底部頁籤空間 */
     }
 
     .card {
@@ -223,7 +223,6 @@
       font-weight: 600;
     }
 
-    /* Tab 內容 */
     .tab-page {
       display: none;
       font-size: 13px;
@@ -241,7 +240,7 @@
       bottom: 0;
       display: flex;
       justify-content: center;
-      pointer-events: none; /* 讓中間容器之外的空白不擋手勢 */
+      pointer-events: none;
     }
 
     .bottom-nav {
@@ -282,7 +281,8 @@
   </header>
 
   <div class="top-summary">
-    下方頁籤切換頁面：先輸入收入與支出，再到「固定支出」設定分期與訂閱，最後到「總計」查看並儲存當月紀錄。
+    下方頁籤切換頁面：先輸入收入與支出，再到「固定支出」設定訂閱，最後到「總計」查看並儲存當月紀錄。<br>
+    若支出有分期，請在「支出」頁籤輸入金額與分期期數。
   </div>
 
   <main>
@@ -340,7 +340,7 @@
       <div class="card">
         <div class="card-title">
           <span>新增支出</span>
-          <span class="sub">一般 / 變動支出</span>
+          <span class="sub">一般 / 變動支出，含分期</span>
         </div>
 
         <div class="row">
@@ -352,15 +352,21 @@
           </div>
           <div class="col">
             <label>
-              金額
-              <input type="number" id="expenseAmount" placeholder="例如 500">
+              支出總金額
+              <input type="number" id="expenseAmount" placeholder="例如 12000">
             </label>
           </div>
         </div>
 
         <label>
+          分期期數（月，可留空）
+          <input type="number" id="expenseInstallmentMonths" placeholder="例如 6（不分期可留空）">
+        </label>
+        <div class="msg" id="expenseInstallmentInfo"></div>
+
+        <label>
           備註（選填）
-          <input type="text" id="expenseNote" placeholder="例如：外食 / 娛樂">
+          <input type="text" id="expenseNote" placeholder="例如：手機、家電、外食...">
         </label>
 
         <button class="btn btn-primary" id="addExpenseBtn">新增支出</button>
@@ -374,8 +380,8 @@
           <thead>
             <tr>
               <th>日期</th>
-              <th>金額</th>
-              <th>備註</th>
+              <th>本月支出金額</th>
+              <th>備註 / 分期資訊</th>
               <th></th>
             </tr>
           </thead>
@@ -384,7 +390,7 @@
       </div>
     </div>
 
-    <!-- 固定支出 TAB -->
+    <!-- 固定支出 TAB（只剩其他固定 + 訂閱） -->
     <div class="tab-page" id="tab-fixed">
       <!-- 其他固定 -->
       <div class="card">
@@ -397,39 +403,6 @@
           每月其他固定支出總額
           <input type="number" id="fixedOther" placeholder="例如：房租 + 保險 + 車貸">
         </label>
-      </div>
-
-      <!-- 分期 -->
-      <div class="card">
-        <div class="card-title">
-          <span>分期支出</span>
-          <span class="sub">自動計算每期金額</span>
-        </div>
-
-        <div class="row">
-          <div class="col">
-            <label>
-              分期總金額
-              <input type="number" id="installmentTotal" placeholder="例如 12000">
-            </label>
-          </div>
-          <div class="col">
-            <label>
-              期數（月）
-              <input type="number" id="installmentMonths" placeholder="例如 6">
-            </label>
-          </div>
-        </div>
-
-        <div class="result-line">
-          <span class="result-label">每期金額</span>
-          <span class="result-value" id="installmentMonthly">0</span>
-        </div>
-
-        <div class="checkbox-inline">
-          <input type="checkbox" id="includeInstallment" checked>
-          <label for="includeInstallment">本月要計入這筆分期支出</label>
-        </div>
       </div>
 
       <!-- 訂閱清單 -->
@@ -504,7 +477,7 @@
         </div>
 
         <div class="result-line">
-          <span class="result-label">變動支出（一般支出）</span>
+          <span class="result-label">變動支出（一般支出，不含分期）</span>
           <span class="result-value" id="sumExpense">0</span>
         </div>
       </div>
@@ -574,7 +547,7 @@
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxLEufK5CDeb3_Yykh_GxaR524eoYodeeFSgS-vouQP-UNSRwbrxdRJ4CkOYZOcpJnD/exec';
 
     let incomes = [];
-    let expenses = [];
+    let expenses = [];      // {id,date,amount,note,isInstallment,totalAmount,months,remainingMonths,remainingTotal,monthly}
     let subscriptions = [];
     let nextIncomeId = 1;
     let nextExpenseId = 1;
@@ -590,14 +563,12 @@
 
     const expenseDateInput = document.getElementById('expenseDate');
     const expenseAmountInput = document.getElementById('expenseAmount');
+    const expenseInstallmentMonthsInput = document.getElementById('expenseInstallmentMonths');
+    const expenseInstallmentInfo = document.getElementById('expenseInstallmentInfo');
     const expenseNoteInput = document.getElementById('expenseNote');
     const expenseTableBody = document.getElementById('expenseTableBody');
 
     const fixedOtherInput = document.getElementById('fixedOther');
-    const installmentTotalInput = document.getElementById('installmentTotal');
-    const installmentMonthsInput = document.getElementById('installmentMonths');
-    const installmentMonthlySpan = document.getElementById('installmentMonthly');
-    const includeInstallmentCheckbox = document.getElementById('includeInstallment');
 
     const subNameInput = document.getElementById('subName');
     const subAmountInput = document.getElementById('subAmount');
@@ -671,21 +642,67 @@
       });
     }
 
+    // ---- 分期預覽 ----
+    function updateExpenseInstallmentPreview() {
+      const total = Number(expenseAmountInput.value) || 0;
+      const months = Number(expenseInstallmentMonthsInput.value) || 0;
+      if (!total || !months) {
+        expenseInstallmentInfo.textContent = '';
+        return;
+      }
+      const monthly = total / months;
+      const remainingMonths = months - 1;
+      const remainingTotal = total - monthly;
+      expenseInstallmentInfo.textContent =
+        `每期約 ${monthly.toFixed(0)} 元，本月支付 ${monthly.toFixed(0)} 元，剩餘 ${remainingMonths} 期 / ${remainingTotal.toFixed(0)} 元`;
+    }
+
+    expenseAmountInput.addEventListener('input', updateExpenseInstallmentPreview);
+    expenseInstallmentMonthsInput.addEventListener('input', updateExpenseInstallmentPreview);
+
     // ---- 支出 ----
     document.getElementById('addExpenseBtn').addEventListener('click', () => {
       const date = expenseDateInput.value;
-      const amount = Number(expenseAmountInput.value) || 0;
+      const totalAmount = Number(expenseAmountInput.value) || 0;
+      const months = Number(expenseInstallmentMonthsInput.value) || 0;
       const note = expenseNoteInput.value.trim();
 
-      if (!date || !amount) {
+      if (!date || !totalAmount) {
         alert('請輸入支出日期與金額');
         return;
       }
 
-      expenses.push({ id: nextExpenseId++, date, amount, note });
+      if (months > 0) {
+        const monthly = totalAmount / months;
+        const remainingMonths = months - 1;
+        const remainingTotal = totalAmount - monthly;
+
+        expenses.push({
+          id: nextExpenseId++,
+          date,
+          amount: monthly, // 本月實際扣款金額
+          note,
+          isInstallment: true,
+          totalAmount,
+          months,
+          remainingMonths,
+          remainingTotal,
+          monthly
+        });
+      } else {
+        expenses.push({
+          id: nextExpenseId++,
+          date,
+          amount: totalAmount,
+          note,
+          isInstallment: false
+        });
+      }
 
       expenseDateInput.value = '';
       expenseAmountInput.value = '';
+      expenseInstallmentMonthsInput.value = '';
+      expenseInstallmentInfo.textContent = '';
       expenseNoteInput.value = '';
 
       renderExpenseTable();
@@ -695,11 +712,16 @@
     function renderExpenseTable() {
       expenseTableBody.innerHTML = '';
       expenses.forEach(item => {
+        let noteText = item.note || '';
+        if (item.isInstallment) {
+          const info = `【分期】總額 ${item.totalAmount} / ${item.months} 期，本月扣 ${item.monthly.toFixed(0)}，剩 ${item.remainingMonths} 期 / ${item.remainingTotal.toFixed(0)} 元`;
+          noteText = noteText ? `${noteText} ${info}` : info;
+        }
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${item.date}</td>
-          <td>${item.amount}</td>
-          <td>${item.note || ''}</td>
+          <td>${item.amount.toFixed(0)}</td>
+          <td>${noteText}</td>
           <td><button class="btn-small" data-id="${item.id}">刪除</button></td>
         `;
         expenseTableBody.appendChild(tr);
@@ -884,36 +906,26 @@
       });
     }
 
-    // ---- 分期計算 ----
-    function calculateInstallment() {
-      const total = Number(installmentTotalInput.value) || 0;
-      const months = Number(installmentMonthsInput.value) || 0;
-      let monthly = 0;
-      if (total > 0 && months > 0) {
-        monthly = total / months;
-      }
-      installmentMonthlySpan.textContent = monthly ? monthly.toFixed(0) : '0';
-      updateSummary();
-    }
-
-    [installmentTotalInput, installmentMonthsInput, includeInstallmentCheckbox, fixedOtherInput]
-      .forEach(el => {
-        el.addEventListener('input', calculateInstallment);
-        el.addEventListener('change', calculateInstallment);
-      });
-
     // ---- 總計計算 ----
     function updateSummary() {
       const monthStr = summaryMonthInput.value;
       let incomeTotal = 0;
-      let expenseTotal = 0;
+      let expenseTotal = 0;           // 一般支出
+      let installmentMonthlyTotal = 0; // 分期本期合計
 
       if (monthStr) {
         incomes.forEach(i => {
           if (i.date && i.date.startsWith(monthStr)) incomeTotal += i.amount;
         });
+
         expenses.forEach(e => {
-          if (e.date && e.date.startsWith(monthStr)) expenseTotal += e.amount;
+          if (e.date && e.date.startsWith(monthStr)) {
+            if (e.isInstallment) {
+              installmentMonthlyTotal += e.amount;
+            } else {
+              expenseTotal += e.amount;
+            }
+          }
         });
       }
 
@@ -922,14 +934,7 @@
         .filter(s => s.active)
         .reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
 
-      const total = Number(installmentTotalInput.value) || 0;
-      const months = Number(installmentMonthsInput.value) || 0;
-      let installmentMonthly = 0;
-      if (total > 0 && months > 0 && includeInstallmentCheckbox.checked) {
-        installmentMonthly = total / months;
-      }
-
-      const fixedTotal = fixedOther + subTotal + installmentMonthly;
+      const fixedTotal = fixedOther + subTotal + installmentMonthlyTotal;
       const remainAfterFixed = incomeTotal - fixedTotal;
       const remainAfterAll = incomeTotal - fixedTotal - expenseTotal;
 
@@ -937,7 +942,7 @@
       sumExpenseSpan.textContent = expenseTotal.toFixed(0);
       sumFixedOtherSpan.textContent = fixedOther.toFixed(0);
       sumSubscriptionSpan.textContent = subTotal.toFixed(0);
-      sumInstallmentSpan.textContent = installmentMonthly.toFixed(0);
+      sumInstallmentSpan.textContent = installmentMonthlyTotal.toFixed(0);
       sumFixedTotalSpan.textContent = fixedTotal.toFixed(0);
       remainAfterFixedSpan.textContent = remainAfterFixed.toFixed(0);
       remainAfterAllSpan.textContent = remainAfterAll.toFixed(0);
@@ -1008,7 +1013,6 @@
       const ym = today.toISOString().slice(0, 7);
       summaryMonthInput.value = ym;
 
-      calculateInstallment();
       loadSubscriptionsFromSheet();
       updateSummary();
     }
