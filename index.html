@@ -47,8 +47,7 @@
   </header>
 
   <div class="top-summary">
-    下方頁籤切換頁面：先輸入收入與支出，再到「固定支出」設定訂閱，最後到「總計」查看並儲存當月紀錄。<br>
-    目前此版本：<b>新增收入會直接寫入試算表「流水」</b>。
+    目前版本：<b>收入新增/刪除都會同步到試算表「流水」</b>（使用 JSONP）。
   </div>
 
   <main>
@@ -87,25 +86,18 @@
       </div>
     </div>
 
-    <!-- 支出（先保留空白，你之後要再串分期我再補） -->
+    <!-- 支出 -->
     <div class="tab-page" id="tab-expense">
       <div class="card">
         <div class="card-title"><span>支出</span><span class="sub">此版先保留</span></div>
-        <div class="msg">你要的分期扣款與分期清單，我可以在下一步再接回來（不影響訂閱已 OK 的部分）。</div>
+        <div class="msg">下一步再接分期與支出。</div>
       </div>
     </div>
 
-    <!-- 固定支出（保留你現有訂閱機制：JSONP listSubscriptions + POST save/delete） -->
+    <!-- 固定支出 -->
     <div class="tab-page" id="tab-fixed">
       <div class="card">
-        <div class="card-title"><span>其他固定支出</span><span class="sub">房租、保險、貸款等總額</span></div>
-        <label>每月其他固定支出總額
-          <input type="number" id="fixedOther" placeholder="例如：房租 + 保險 + 車貸">
-        </label>
-      </div>
-
-      <div class="card">
-        <div class="card-title"><span>訂閱清單</span><span class="sub">（你說已 OK，這裡維持）</span></div>
+        <div class="card-title"><span>訂閱清單</span><span class="sub">（維持你已 OK 的功能）</span></div>
 
         <div class="btn-row">
           <button class="btn btn-secondary" id="reloadSubBtn">重新讀取訂閱</button>
@@ -139,7 +131,7 @@
     <div class="tab-page" id="tab-summary">
       <div class="card">
         <div class="card-title"><span>總計</span></div>
-        <div class="msg">等你確認「收入已可寫入流水」後，我再把「支出/分期/總計儲存」完整接回。</div>
+        <div class="msg">等你確認收入/刪除都 OK，再接總計與分期。</div>
       </div>
     </div>
   </main>
@@ -154,10 +146,11 @@
   </div>
 
 <script>
-  // ✅ 換成你「綁定在試算表」那個 Apps Script Web App /exec URL
+  // ✅ 換成你的 Apps Script Web App /exec URL（綁定在試算表那個）
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxLEufK5CDeb3_Yykh_GxaR524eoYodeeFSgS-vouQP-UNSRwbrxdRJ4CkOYZOcpJnD/exec';
 
-  let incomes = [];
+  // 收入列表：會存 rowNumber，才能刪除同步到試算表
+  let incomes = []; // { id, date, amount, note, rowNumber }
   let nextIncomeId = 1;
 
   let subscriptions = [];
@@ -221,7 +214,7 @@
     });
   });
 
-  // ===== 收入：寫入試算表「流水」 =====
+  // ===== 收入：新增/刪除同步到試算表 =====
   const incomeDateInput = document.getElementById('incomeDate');
   const incomeAmountInput = document.getElementById('incomeAmount');
   const incomeNoteInput = document.getElementById('incomeNote');
@@ -242,20 +235,25 @@
 
     incomeMsg.textContent = '寫入試算表中...';
 
-    // ✅ 寫入後端（no-cors 無法讀回結果，所以以「寫入後顯示並提示你去表確認」）
     try {
-      await postForm({ type: 'addIncome', date, amount: String(amount), note });
+      const res = await jsonpGet({ type: 'addIncome', date, amount: String(amount), note });
+      if (!res || !res.success) throw new Error((res && res.error) ? res.error : '寫入失敗');
 
-      // UI 列表顯示（表示已送出；真正是否寫入成功，以你表是否新增為準）
-      incomes.push({ id: nextIncomeId++, date, amount, note });
+      incomes.push({
+        id: nextIncomeId++,
+        date,
+        amount,
+        note,
+        rowNumber: res.rowNumber
+      });
       renderIncomeTable();
 
       incomeDateInput.value = '';
       incomeAmountInput.value = '';
       incomeNoteInput.value = '';
-      incomeMsg.textContent = '已送出寫入（請到試算表「流水」確認新增列）。';
+      incomeMsg.textContent = `已寫入試算表（列：${res.rowNumber}）。`;
     } catch (e) {
-      incomeMsg.textContent = '送出失敗：' + e.message;
+      incomeMsg.textContent = '寫入失敗：' + e.message;
       incomeMsg.classList.add('error');
     }
   });
@@ -268,21 +266,39 @@
         <td>${item.date}</td>
         <td>${item.amount}</td>
         <td>${item.note || ''}</td>
-        <td><button class="btn-small" data-id="${item.id}">刪除</button></td>
+        <td><button class="btn-small income-del" data-id="${item.id}">刪除</button></td>
       `;
       incomeTableBody.appendChild(tr);
     });
 
-    incomeTableBody.querySelectorAll('.btn-small').forEach(btn => {
-      btn.addEventListener('click', () => {
+    incomeTableBody.querySelectorAll('.income-del').forEach(btn => {
+      btn.addEventListener('click', async () => {
         const id = Number(btn.dataset.id);
-        incomes = incomes.filter(i => i.id !== id);
-        renderIncomeTable();
+        const item = incomes.find(x => x.id === id);
+        if (!item) return;
+
+        if (!confirm('確定要刪除此筆收入，並同步刪除試算表的資料嗎？')) return;
+
+        incomeMsg.classList.remove('error');
+        incomeMsg.textContent = '刪除試算表資料中...';
+
+        try {
+          const res = await jsonpGet({ type: 'deleteIncome', rowNumber: String(item.rowNumber) });
+          if (!res || !res.success) throw new Error((res && res.error) ? res.error : '刪除失敗');
+
+          incomes = incomes.filter(x => x.id !== id);
+          renderIncomeTable();
+
+          incomeMsg.textContent = '已同步刪除試算表資料。';
+        } catch (e) {
+          incomeMsg.textContent = '刪除失敗：' + e.message;
+          incomeMsg.classList.add('error');
+        }
       });
     });
   }
 
-  // ===== 訂閱：維持你已 OK 的機制 =====
+  // ===== 訂閱：維持原流程 =====
   const subNameInput = document.getElementById('subName');
   const subAmountInput = document.getElementById('subAmount');
   const subActiveInput = document.getElementById('subActive');
