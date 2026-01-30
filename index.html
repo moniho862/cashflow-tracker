@@ -14,7 +14,7 @@
     .top-summary{max-width:520px;margin:8px auto 0;padding:8px 12px 0;font-size:13px;color:var(--text-sub);line-height:1.6;}
     main{max-width:520px;margin:0 auto;padding:8px 12px 90px;}
     .card{background:var(--card-bg);border-radius:12px;padding:10px 10px 12px;margin-bottom:10px;border:1px solid var(--border);}
-    .card-title{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+    .card-title{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
     .card-title span.sub{font-size:11px;color:var(--text-sub);font-weight:500;}
     label{display:block;margin-top:8px;font-size:12px;font-weight:700;}
     input{margin-top:4px;padding:10px 10px;width:100%;border-radius:10px;border:1px solid var(--border);font-size:14px;background:#fff;}
@@ -89,7 +89,10 @@
       <div class="card">
         <div class="card-title">
           <span>收入列表（同步試算表）</span>
-          <button class="btn-small" id="reloadIncomeBtn">重新讀取收入</button>
+          <span class="sub">重新整理也會保留</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="reloadIncomeBtn">重新讀取收入</button>
         </div>
         <table>
           <thead><tr><th>日期</th><th>金額</th><th>備註</th><th></th></tr></thead>
@@ -134,8 +137,7 @@
         </div>
 
         <div class="hint">
-          分期規則：輸入總金額與分期期數，會自動算每期。<br/>
-          本月只會列入「分期本月扣款」，並建立/更新「分期清單」。
+          分期規則：輸入總金額與期數後，會自動算每期。支出明細會寫入「本月扣款（每期）」；分期清單會更新。
         </div>
 
         <div class="btn-row">
@@ -147,7 +149,10 @@
       <div class="card">
         <div class="card-title">
           <span>支出列表（同步試算表）</span>
-          <button class="btn-small" id="reloadExpenseBtn">重新讀取支出</button>
+          <span class="sub">可編輯/刪除</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="reloadExpenseBtn">重新讀取支出</button>
         </div>
         <table>
           <thead><tr><th>日期</th><th>金額</th><th>備註</th><th>分期</th><th></th></tr></thead>
@@ -156,9 +161,9 @@
       </div>
 
       <div class="card">
-        <div class="card-title">
-          <span>分期清單（本月後續會自動列入總計）</span>
-          <button class="btn-small" id="reloadInstallBtn">重新讀取分期清單</button>
+        <div class="card-title"><span>分期清單（本月後續會自動列入總計）</span><span class="sub">同步試算表</span></div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="reloadInstallBtn">重新讀取分期清單</button>
         </div>
         <table>
           <thead><tr><th>名稱/備註</th><th>總額</th><th>每期</th><th>剩餘</th><th>剩餘期數</th><th>狀態</th></tr></thead>
@@ -182,7 +187,7 @@
       </div>
 
       <div class="card">
-        <div class="card-title"><span>訂閱清單</span><span class="sub">（讀取/新增/刪除）</span></div>
+        <div class="card-title"><span>訂閱清單</span><span class="sub">讀取/新增/刪除</span></div>
 
         <div class="btn-row">
           <button class="btn btn-secondary" id="reloadSubBtn">重新讀取訂閱</button>
@@ -262,10 +267,10 @@
   </div>
 
 <script>
-  // ✅ 你的 Web App /exec
+  // ✅ 你的 Apps Script Web App /exec
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxLEufK5CDeb3_Yykh_GxaR524eoYodeeFSgS-vouQP-UNSRwbrxdRJ4CkOYZOcpJnD/exec';
 
-  // JSONP
+  // === JSONP ===
   function jsonpGet(params) {
     return new Promise((resolve, reject) => {
       const callbackName = '__cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
@@ -286,7 +291,7 @@
 
       function cleanup() {
         clearTimeout(timeout);
-        delete window[callbackName];
+        try { delete window[callbackName]; } catch(_) {}
         script.remove();
       }
 
@@ -304,6 +309,7 @@
     });
   }
 
+  // 訂閱（POST no-cors，保留你原本做法）
   function postForm(dataObj) {
     const form = new URLSearchParams();
     Object.keys(dataObj).forEach(k => form.append(k, dataObj[k]));
@@ -315,27 +321,24 @@
     return x.toLocaleString('zh-TW');
   }
 
-  // ✅ 日期顯示：只要 YYYY/M/D（避免 GMT 長串）
-  function fmtDateShort(v){
-    if (!v) return '';
-    // v 可能是 Date 或字串
-    const d = (v instanceof Date) ? v : new Date(v);
-    if (isNaN(d.getTime())) return String(v);
-    const y = d.getFullYear();
-    const m = d.getMonth()+1;
-    const day = d.getDate();
-    return `${y}/${m}/${day}`;
+  // 顯示日期：只要 2026/1/5
+  function displayYMD(ymd){ // 'YYYY-MM-DD'
+    if (!ymd) return '';
+    const m = String(ymd).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return String(ymd);
+    return `${Number(m[1])}/${Number(m[2])}/${Number(m[3])}`;
   }
 
-  function currentMonthKey(){
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  // 取得月份 yyyy-mm
+  function monthOfYMD(ymd){
+    if (!ymd) return '';
+    const m = String(ymd).match(/^(\d{4})-(\d{2})-/);
+    return m ? `${m[1]}-${m[2]}` : '';
   }
 
   // === TAB ===
   const tabBtns = document.querySelectorAll('.tab-btn');
   const tabPages = document.querySelectorAll('.tab-page');
-
   tabBtns.forEach(btn => {
     btn.addEventListener('click', async () => {
       const target = btn.dataset.tab;
@@ -345,27 +348,44 @@
       document.getElementById('tab-' + target).classList.add('active');
 
       if (target === 'summary') {
-        if (!summaryMonth.value) summaryMonth.value = currentMonthKey();
-        await recalc(true);
+        if (!summaryMonth.value) setSummaryMonthToThisMonth();
+        await recalc(); // 進入總計就自動計算
       }
     });
   });
 
+  function setSummaryMonthToThisMonth(){
+    const d = new Date();
+    summaryMonth.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
+
+  async function autoRecalcIfMatch(ymd){
+    const m = summaryMonth.value || '';
+    const target = monthOfYMD(ymd);
+    // 如果總計沒選月份，就直接帶入該筆月份
+    if (!m && target) summaryMonth.value = target;
+
+    // 若總計選的月份與新增/編輯/刪除的月份相同 → 自動更新
+    if (summaryMonth.value && target && summaryMonth.value === target) {
+      await recalc();
+    }
+  }
+
   // =========================================================
-  // 收入：讀取/新增/編輯/刪除
+  // 收入（讀取/新增/編輯/刪除）
   // =========================================================
-  let incomeEditId = null;
+  let incomes = [];
+  let editingIncomeId = null;
 
   const incomeDateInput = document.getElementById('incomeDate');
   const incomeAmountInput = document.getElementById('incomeAmount');
   const incomeNoteInput = document.getElementById('incomeNote');
   const incomeMsg = document.getElementById('incomeMsg');
   const incomeTableBody = document.getElementById('incomeTableBody');
-  const addIncomeBtn = document.getElementById('addIncomeBtn');
 
-  document.getElementById('reloadIncomeBtn').addEventListener('click', loadIncomeList);
+  document.getElementById('reloadIncomeBtn').addEventListener('click', loadIncome);
 
-  addIncomeBtn.addEventListener('click', async () => {
+  document.getElementById('addIncomeBtn').addEventListener('click', async () => {
     const date = incomeDateInput.value;
     const amount = Number(incomeAmountInput.value) || 0;
     const note = incomeNoteInput.value.trim();
@@ -377,92 +397,93 @@
       return;
     }
 
-    incomeMsg.textContent = incomeEditId ? '更新中...' : '寫入中...';
-
     try {
-      if (incomeEditId){
-        const res = await jsonpGet({ type:'updateIncome', id: incomeEditId, date, amount:String(amount), note });
-        if (!res || !res.success) throw new Error((res && res.error) ? res.error : '更新失敗');
-        incomeMsg.textContent = '已更新收入。';
-        incomeEditId = null;
-        addIncomeBtn.textContent = '新增收入';
-      }else{
-        const res = await jsonpGet({ type:'addIncome', date, amount:String(amount), note });
-        if (!res || !res.success) throw new Error((res && res.error) ? res.error : '寫入失敗');
-        incomeMsg.textContent = '已新增收入。';
-      }
+      incomeMsg.textContent = editingIncomeId ? '更新中...' : '寫入中...';
+
+      const res = editingIncomeId
+        ? await jsonpGet({ type: 'updateIncome', id: editingIncomeId, date, amount: String(amount), note })
+        : await jsonpGet({ type: 'addIncome', date, amount: String(amount), note });
+
+      if (!res || !res.success) throw new Error((res && res.error) ? res.error : '失敗');
+
+      editingIncomeId = null;
+      document.getElementById('addIncomeBtn').textContent = '新增收入';
 
       incomeDateInput.value = '';
       incomeAmountInput.value = '';
       incomeNoteInput.value = '';
 
-      await loadIncomeList();
-      await autoRecalcIfNeeded();
+      await loadIncome();
+      incomeMsg.textContent = '已完成。';
 
+      await autoRecalcIfMatch(date); // ✅ 自動更新總計
     } catch (e) {
-      incomeMsg.textContent = (incomeEditId ? '更新失敗：' : '寫入失敗：') + e.message;
+      incomeMsg.textContent = '失敗：' + e.message;
       incomeMsg.classList.add('error');
     }
   });
 
-  async function loadIncomeList(){
+  async function loadIncome(){
     incomeMsg.classList.remove('error');
     incomeMsg.textContent = '讀取收入中...';
     try{
       const res = await jsonpGet({ type:'listIncome' });
       if (!res || !res.success) throw new Error((res && res.error) ? res.error : '讀取失敗');
-      renderIncomeTable(res.data || []);
-      incomeMsg.textContent = `已讀取 ${ (res.data||[]).length } 筆收入。`;
+      incomes = res.data || [];
+      renderIncomeTable();
+      incomeMsg.textContent = `已讀取 ${incomes.length} 筆收入。`;
     }catch(e){
       incomeMsg.textContent = '讀取失敗：' + e.message;
       incomeMsg.classList.add('error');
     }
   }
 
-  function renderIncomeTable(list){
+  function renderIncomeTable(){
     incomeTableBody.innerHTML = '';
-    list.forEach(item=>{
+    incomes.forEach(item => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${fmtDateShort(item.date)}</td>
+        <td>${displayYMD(item.date)}</td>
         <td>${fmt(item.amount)}</td>
         <td>${item.note || ''}</td>
         <td>
-          <button class="btn-small inc-edit" data-id="${item.id}" data-date="${fmtDateForInput(item.date)}" data-amount="${item.amount}" data-note="${escapeHtml(item.note||'')}">編輯</button>
-          <button class="btn-small inc-del" data-id="${item.id}">刪除</button>
+          <button class="btn-small income-edit" data-id="${item.id}">編輯</button>
+          <button class="btn-small income-del" data-id="${item.id}">刪除</button>
         </td>
       `;
       incomeTableBody.appendChild(tr);
     });
 
-    incomeTableBody.querySelectorAll('.inc-edit').forEach(btn=>{
+    incomeTableBody.querySelectorAll('.income-edit').forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        incomeEditId = btn.dataset.id;
-        incomeDateInput.value = btn.dataset.date;
-        incomeAmountInput.value = btn.dataset.amount;
-        incomeNoteInput.value = unescapeHtml(btn.dataset.note || '');
-        addIncomeBtn.textContent = '更新收入';
-        incomeMsg.textContent = '編輯模式：修改後按「更新收入」。';
+        const id = btn.dataset.id;
+        const it = incomes.find(x=>x.id===id);
+        if (!it) return;
+        editingIncomeId = id;
+        incomeDateInput.value = it.date;
+        incomeAmountInput.value = it.amount;
+        incomeNoteInput.value = it.note || '';
+        document.getElementById('addIncomeBtn').textContent = '更新收入';
         incomeMsg.classList.remove('error');
+        incomeMsg.textContent = '編輯模式：修改後按「更新收入」';
       });
     });
 
-    incomeTableBody.querySelectorAll('.inc-del').forEach(btn=>{
+    incomeTableBody.querySelectorAll('.income-del').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
         const id = btn.dataset.id;
-        if (!confirm('確定要刪除此筆收入，並同步刪除試算表資料嗎？')) return;
+        const it = incomes.find(x=>x.id===id);
+        if (!it) return;
+        if (!confirm('確定要刪除此筆收入並同步刪除試算表資料嗎？')) return;
+
         incomeMsg.classList.remove('error');
         incomeMsg.textContent = '刪除中...';
         try{
           const res = await jsonpGet({ type:'deleteIncome', id });
           if (!res || !res.success) throw new Error((res && res.error) ? res.error : '刪除失敗');
-          incomeMsg.textContent = '已刪除收入。';
-          if (incomeEditId === id){
-            incomeEditId = null;
-            addIncomeBtn.textContent = '新增收入';
-          }
-          await loadIncomeList();
-          await autoRecalcIfNeeded();
+          await loadIncome();
+          incomeMsg.textContent = '已刪除。';
+          await autoRecalcIfMatch(it.date); // ✅ 自動更新總計
         }catch(e){
           incomeMsg.textContent = '刪除失敗：' + e.message;
           incomeMsg.classList.add('error');
@@ -472,9 +493,10 @@
   }
 
   // =========================================================
-  // 支出：讀取/新增/編輯/刪除 + 分期清單
+  // 支出（讀取/新增/編輯/刪除） + 分期清單
   // =========================================================
-  let expenseEditId = null;
+  let expenses = [];
+  let editingExpenseId = null;
 
   const expDate = document.getElementById('expDate');
   const expAmount = document.getElementById('expAmount');
@@ -483,10 +505,8 @@
   const expPerTerm = document.getElementById('expPerTerm');
   const expMsg = document.getElementById('expMsg');
   const expTableBody = document.getElementById('expTableBody');
-  const addExpenseBtn = document.getElementById('addExpenseBtn');
 
-  document.getElementById('reloadExpenseBtn').addEventListener('click', loadExpenseList);
-  document.getElementById('reloadInstallBtn').addEventListener('click', loadInstallments);
+  document.getElementById('reloadExpenseBtn').addEventListener('click', loadExpense);
 
   function calcPerTerm(){
     const a = Number(expAmount.value)||0;
@@ -497,39 +517,30 @@
   expInstallTerms.addEventListener('input', calcPerTerm);
   expAmount.addEventListener('input', calcPerTerm);
 
-  addExpenseBtn.addEventListener('click', async ()=>{
+  document.getElementById('addExpenseBtn').addEventListener('click', async ()=>{
     const date = expDate.value;
     const amount = Number(expAmount.value)||0;
     const note = expNote.value.trim();
     const terms = Number(expInstallTerms.value)||0;
 
     expMsg.classList.remove('error');
-    if (!date || !amount) {
+    if (!date || !amount){
       expMsg.textContent = '請輸入支出日期與金額';
       expMsg.classList.add('error');
       return;
     }
 
-    expMsg.textContent = expenseEditId ? '更新中...' : '寫入中...';
-
     try{
-      if (expenseEditId){
-        const res = await jsonpGet({ type:'updateExpense', id: expenseEditId, date, amount:String(amount), note });
-        if (!res || !res.success) throw new Error((res && res.error) ? res.error : '更新失敗');
-        expMsg.textContent = '已更新支出。';
-        expenseEditId = null;
-        addExpenseBtn.textContent = '新增支出';
-        // 更新時不處理分期清單（避免邏輯混亂）
-      }else{
-        const res = await jsonpGet({ type:'addExpense', date, amount:String(amount), note, terms:String(terms||0) });
-        if (!res || !res.success) throw new Error((res && res.error) ? res.error : '寫入失敗');
+      expMsg.textContent = editingExpenseId ? '更新中...' : '寫入中...';
 
-        expMsg.textContent = (res.terms > 1)
-          ? `已新增分期支出（本月扣款：${fmt(res.perTerm)}），分期清單已更新。`
-          : `已新增一般支出。`;
+      const res = editingExpenseId
+        ? await jsonpGet({ type:'updateExpense', id: editingExpenseId, date, amount: String(amount), note, terms: String(terms||0) })
+        : await jsonpGet({ type:'addExpense', date, amount: String(amount), note, terms: String(terms||0) });
 
-        if (res.terms > 1) await loadInstallments();
-      }
+      if (!res || !res.success) throw new Error((res && res.error) ? res.error : '失敗');
+
+      editingExpenseId = null;
+      document.getElementById('addExpenseBtn').textContent = '新增支出';
 
       expDate.value = '';
       expAmount.value = '';
@@ -537,41 +548,44 @@
       expInstallTerms.value = '';
       expPerTerm.value = '';
 
-      await loadExpenseList();
-      await autoRecalcIfNeeded();
+      await loadExpense();
+      await loadInstallments();
+      expMsg.textContent = '已完成。';
 
+      await autoRecalcIfMatch(date); // ✅ 自動更新總計
     }catch(e){
-      expMsg.textContent = (expenseEditId ? '更新失敗：' : '寫入失敗：') + e.message;
+      expMsg.textContent = '失敗：' + e.message;
       expMsg.classList.add('error');
     }
   });
 
-  async function loadExpenseList(){
+  async function loadExpense(){
     expMsg.classList.remove('error');
     expMsg.textContent = '讀取支出中...';
     try{
       const res = await jsonpGet({ type:'listExpense' });
       if (!res || !res.success) throw new Error((res && res.error) ? res.error : '讀取失敗');
-      renderExpenseTable(res.data || []);
-      expMsg.textContent = `已讀取 ${ (res.data||[]).length } 筆支出。`;
+      expenses = res.data || [];
+      renderExpenseTable();
+      expMsg.textContent = `已讀取 ${expenses.length} 筆支出。`;
     }catch(e){
       expMsg.textContent = '讀取失敗：' + e.message;
       expMsg.classList.add('error');
     }
   }
 
-  function renderExpenseTable(list){
+  function renderExpenseTable(){
     expTableBody.innerHTML = '';
-    list.forEach(item=>{
-      const instTxt = (item.type === '分期') ? `${item.terms}期` : '';
+    expenses.forEach(item=>{
+      const inst = item.terms > 1 ? `${item.terms}期` : '';
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${fmtDateShort(item.date)}</td>
-        <td>${fmt(item.type === '分期' ? item.perTerm : item.amount)}</td>
+        <td>${displayYMD(item.date)}</td>
+        <td>${fmt(item.amount)}</td>
         <td>${item.note || ''}</td>
-        <td>${instTxt}</td>
+        <td>${inst}</td>
         <td>
-          <button class="btn-small exp-edit" data-id="${item.id}" data-date="${fmtDateForInput(item.date)}" data-amount="${item.amount}" data-note="${escapeHtml(item.note||'')}" data-type="${item.type}">編輯</button>
+          <button class="btn-small exp-edit" data-id="${item.id}">編輯</button>
           <button class="btn-small exp-del" data-id="${item.id}">刪除</button>
         </td>
       `;
@@ -580,40 +594,37 @@
 
     expTableBody.querySelectorAll('.exp-edit').forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        const type = btn.dataset.type;
-        if (type === '分期'){
-          alert('分期支出目前僅允許刪除後重建（避免分期清單對不上）。如需可編輯分期邏輯，我再幫你做進階版。');
-          return;
-        }
-        expenseEditId = btn.dataset.id;
-        expDate.value = btn.dataset.date;
-        expAmount.value = btn.dataset.amount;
-        expNote.value = unescapeHtml(btn.dataset.note || '');
-        expInstallTerms.value = '';
-        expPerTerm.value = '';
-        addExpenseBtn.textContent = '更新支出';
-        expMsg.textContent = '編輯模式：修改後按「更新支出」。';
+        const id = btn.dataset.id;
+        const it = expenses.find(x=>x.id===id);
+        if (!it) return;
+
+        editingExpenseId = id;
+        expDate.value = it.date;
+        expAmount.value = it.amount;
+        expNote.value = it.note || '';
+        expInstallTerms.value = it.terms > 1 ? it.terms : '';
+        calcPerTerm();
+        document.getElementById('addExpenseBtn').textContent = '更新支出';
         expMsg.classList.remove('error');
+        expMsg.textContent = '編輯模式：修改後按「更新支出」';
       });
     });
 
     expTableBody.querySelectorAll('.exp-del').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
         const id = btn.dataset.id;
-        if (!confirm('確定要刪除此筆支出，並同步刪除試算表資料嗎？（分期會同步移除分期清單）')) return;
+        const it = expenses.find(x=>x.id===id);
+        if (!it) return;
+        if (!confirm('確定要刪除此筆支出並同步刪除試算表資料嗎？')) return;
+
         expMsg.classList.remove('error');
         expMsg.textContent = '刪除中...';
         try{
           const res = await jsonpGet({ type:'deleteExpense', id });
           if (!res || !res.success) throw new Error((res && res.error) ? res.error : '刪除失敗');
-          expMsg.textContent = '已刪除支出。';
-          if (expenseEditId === id){
-            expenseEditId = null;
-            addExpenseBtn.textContent = '新增支出';
-          }
-          await loadExpenseList();
-          await loadInstallments();
-          await autoRecalcIfNeeded();
+          await loadExpense();
+          expMsg.textContent = '已刪除。';
+          await autoRecalcIfMatch(it.date); // ✅ 自動更新總計
         }catch(e){
           expMsg.textContent = '刪除失敗：' + e.message;
           expMsg.classList.add('error');
@@ -625,6 +636,7 @@
   // 分期清單
   const installTableBody = document.getElementById('installTableBody');
   const installMsg = document.getElementById('installMsg');
+  document.getElementById('reloadInstallBtn').addEventListener('click', loadInstallments);
 
   async function loadInstallments(){
     installMsg.classList.remove('error');
@@ -648,14 +660,22 @@
         installTableBody.appendChild(tr);
       });
       installMsg.textContent = `已讀取 ${list.length} 筆分期。`;
+
+      // 分期變動也會影響總計（分期本月扣款）
+      await recalcIfSummaryActiveOrSelected();
     }catch(e){
       installMsg.textContent = '讀取分期清單失敗：' + e.message;
       installMsg.classList.add('error');
     }
   }
 
+  async function recalcIfSummaryActiveOrSelected(){
+    // 若總計已選月份 → 直接更新一次
+    if (summaryMonth.value) await recalc();
+  }
+
   // =========================================================
-  // 固定支出：其他固定支出 + 訂閱（維持你原本行為）
+  // 固定支出：其他固定支出 + 訂閱（保留你原本 POST 方案）
   // =========================================================
   const otherFixedAmount = document.getElementById('otherFixedAmount');
   const otherFixedMsg = document.getElementById('otherFixedMsg');
@@ -668,7 +688,7 @@
       const res = await jsonpGet({ type:'saveSettings', otherFixed: String(v) });
       if (!res || !res.success) throw new Error((res && res.error) ? res.error : '儲存失敗');
       otherFixedMsg.textContent = '已儲存固定支出設定。';
-      await autoRecalcIfNeeded();
+      await recalcIfSummaryActiveOrSelected(); // ✅ 自動更新總計
     }catch(e){
       otherFixedMsg.textContent = '儲存失敗：' + e.message;
       otherFixedMsg.classList.add('error');
@@ -684,7 +704,7 @@
     }catch(_){}
   }
 
-  // 訂閱（你原本 OK 的功能：POST 寫入、JSONP 讀取）
+  // 訂閱（讀取/新增/刪除/啟用）
   let subscriptions = [];
   let editingSubId = null;
 
@@ -694,24 +714,15 @@
   const subMsgDiv = document.getElementById('subMsg');
   const subTableBody = document.getElementById('subTableBody');
 
-  async function loadSubscriptionsFromSheet() {
-    try {
-      subMsgDiv.textContent = '讀取訂閱清單中...';
-      subMsgDiv.classList.remove('error');
+  document.getElementById('reloadSubBtn').addEventListener('click', loadSubscriptionsFromSheet);
 
-      const data = await jsonpGet({ type: 'listSubscriptions' });
-      if (!data || !data.success) throw new Error((data && data.error) ? data.error : '讀取失敗');
+  document.getElementById('clearSubFormBtn').addEventListener('click', ()=>{
+    clearSubForm();
+    subMsgDiv.textContent = '';
+    subMsgDiv.classList.remove('error');
+  });
 
-      subscriptions = data.data || [];
-      renderSubTable();
-      subMsgDiv.textContent = `已讀取 ${subscriptions.length} 筆訂閱（來自試算表）。`;
-    } catch (err) {
-      subMsgDiv.textContent = '讀取訂閱清單失敗：' + err.message;
-      subMsgDiv.classList.add('error');
-    }
-  }
-
-  function clearSubForm() {
+  function clearSubForm(){
     editingSubId = null;
     subNameInput.value = '';
     subAmountInput.value = '';
@@ -719,54 +730,57 @@
     document.getElementById('saveSubBtn').textContent = '新增訂閱';
   }
 
-  document.getElementById('clearSubFormBtn').addEventListener('click', () => {
-    clearSubForm();
-    subMsgDiv.textContent = '';
-    subMsgDiv.classList.remove('error');
-  });
-
-  document.getElementById('reloadSubBtn').addEventListener('click', loadSubscriptionsFromSheet);
-
-  document.getElementById('saveSubBtn').addEventListener('click', async () => {
+  document.getElementById('saveSubBtn').addEventListener('click', async ()=>{
     const name = subNameInput.value.trim();
-    const amount = Number(subAmountInput.value) || 0;
+    const amount = Number(subAmountInput.value)||0;
     const active = subActiveInput.checked;
 
-    if (!name || !amount) {
+    if (!name || !amount){
       subMsgDiv.textContent = '請輸入訂閱名稱與月費';
       subMsgDiv.classList.add('error');
       return;
     }
 
     let id = editingSubId;
-    if (!id) id = 'sub_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+    if (!id) id = 'sub_' + Date.now() + '_' + Math.floor(Math.random()*100000);
 
-    subMsgDiv.textContent = '已送出寫入（請稍候刷新清單）...';
+    subMsgDiv.textContent = editingSubId ? '更新中（稍後自動刷新）...' : '新增中（稍後自動刷新）...';
     subMsgDiv.classList.remove('error');
 
-    postForm({
-      type: 'saveSubscription',
-      id,
-      name,
-      amount: String(amount),
-      active: active ? 'true' : 'false'
-    });
+    postForm({ type:'saveSubscription', id, name, amount:String(amount), active: active ? 'true':'false' });
 
-    setTimeout(async () => {
+    setTimeout(async ()=>{
       await loadSubscriptionsFromSheet();
       clearSubForm();
-      await autoRecalcIfNeeded();
+      await recalcIfSummaryActiveOrSelected(); // ✅ 訂閱變動影響總計
     }, 800);
   });
 
-  function renderSubTable() {
+  async function loadSubscriptionsFromSheet(){
+    try{
+      subMsgDiv.textContent = '讀取訂閱清單中...';
+      subMsgDiv.classList.remove('error');
+
+      const res = await jsonpGet({ type:'listSubscriptions' });
+      if (!res || !res.success) throw new Error((res && res.error) ? res.error : '讀取失敗');
+
+      subscriptions = res.data || [];
+      renderSubTable();
+      subMsgDiv.textContent = `已讀取 ${subscriptions.length} 筆訂閱（來自試算表）。`;
+    }catch(e){
+      subMsgDiv.textContent = '讀取訂閱清單失敗：' + e.message;
+      subMsgDiv.classList.add('error');
+    }
+  }
+
+  function renderSubTable(){
     subTableBody.innerHTML = '';
-    subscriptions.forEach(s => {
+    subscriptions.forEach(s=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${s.name}</td>
         <td>${fmt(s.amount)}</td>
-        <td><input type="checkbox" data-id="${s.id}" class="sub-active-toggle" ${s.active ? 'checked' : ''}></td>
+        <td><input type="checkbox" data-id="${s.id}" class="sub-active-toggle" ${s.active ? 'checked':''}></td>
         <td>
           <button class="btn-small sub-edit" data-id="${s.id}">編輯</button>
           <button class="btn-small sub-del" data-id="${s.id}">刪除</button>
@@ -775,27 +789,21 @@
       subTableBody.appendChild(tr);
     });
 
-    subTableBody.querySelectorAll('.sub-active-toggle').forEach(cb => {
-      cb.addEventListener('change', () => {
+    subTableBody.querySelectorAll('.sub-active-toggle').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
         const id = cb.dataset.id;
-        const s = subscriptions.find(x => x.id === id);
+        const s = subscriptions.find(x=>x.id===id);
         if (!s) return;
         s.active = cb.checked;
-        postForm({
-          type: 'saveSubscription',
-          id: s.id,
-          name: s.name,
-          amount: String(s.amount),
-          active: s.active ? 'true' : 'false'
-        });
-        autoRecalcIfNeeded();
+        postForm({ type:'saveSubscription', id:s.id, name:s.name, amount:String(s.amount), active: s.active ? 'true':'false' });
+        setTimeout(async ()=>{ await recalcIfSummaryActiveOrSelected(); }, 600);
       });
     });
 
-    subTableBody.querySelectorAll('.sub-edit').forEach(btn => {
-      btn.addEventListener('click', () => {
+    subTableBody.querySelectorAll('.sub-edit').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
         const id = btn.dataset.id;
-        const s = subscriptions.find(x => x.id === id);
+        const s = subscriptions.find(x=>x.id===id);
         if (!s) return;
         editingSubId = id;
         subNameInput.value = s.name;
@@ -807,19 +815,19 @@
       });
     });
 
-    subTableBody.querySelectorAll('.sub-del').forEach(btn => {
-      btn.addEventListener('click', () => {
+    subTableBody.querySelectorAll('.sub-del').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
         const id = btn.dataset.id;
         if (!confirm('確定要刪除這筆訂閱嗎？')) return;
 
-        subMsgDiv.textContent = '已送出刪除（請稍候刷新清單）...';
+        subMsgDiv.textContent = '刪除中（稍後自動刷新）...';
         subMsgDiv.classList.remove('error');
 
-        postForm({ type: 'deleteSubscription', id });
+        postForm({ type:'deleteSubscription', id });
 
-        setTimeout(async () => {
+        setTimeout(async ()=>{
           await loadSubscriptionsFromSheet();
-          await autoRecalcIfNeeded();
+          await recalcIfSummaryActiveOrSelected();
         }, 800);
       });
     });
@@ -838,22 +846,20 @@
   const kFixed = document.getElementById('kFixed');
   const kRemain = document.getElementById('kRemain');
 
-  document.getElementById('recalcBtn').addEventListener('click', ()=>recalc(false));
+  document.getElementById('recalcBtn').addEventListener('click', recalc);
   document.getElementById('saveMonthlySummaryBtn').addEventListener('click', saveMonthlySummary);
 
-  async function recalc(silent){
-    const m = summaryMonth.value;
+  summaryMonth.addEventListener('change', recalc);
+
+  async function recalc(){
+    const m = summaryMonth.value; // yyyy-mm
+    sumMsg.classList.remove('error');
     if (!m){
-      if (!silent){
-        sumMsg.textContent = '請選擇月份';
-        sumMsg.classList.add('error');
-      }
+      sumMsg.textContent = '請選擇月份';
+      sumMsg.classList.add('error');
       return;
     }
-    if (!silent){
-      sumMsg.classList.remove('error');
-      sumMsg.textContent = '計算中...';
-    }
+    sumMsg.textContent = '計算中...';
 
     try{
       const res = await jsonpGet({ type:'getMonthlySummary', month: m });
@@ -874,20 +880,12 @@
           固定支出合計：${fmt(res.data.fixedTotal)}<br/>
         </div>
       `;
-      if (!silent) sumMsg.textContent = '計算完成。';
-      sumMsg.classList.remove('error');
-    }catch(e){
-      if (!silent){
-        sumMsg.textContent = '計算失敗：' + e.message;
-        sumMsg.classList.add('error');
-      }
-    }
-  }
 
-  async function autoRecalcIfNeeded(){
-    // 只要總計頁有選月份，就自動更新
-    if (!summaryMonth.value) summaryMonth.value = currentMonthKey();
-    await recalc(true);
+      sumMsg.textContent = '已更新。';
+    }catch(e){
+      sumMsg.textContent = '計算失敗：' + e.message;
+      sumMsg.classList.add('error');
+    }
   }
 
   async function saveMonthlySummary(){
@@ -898,7 +896,7 @@
       sumMsg.classList.add('error');
       return;
     }
-    if (!confirm(`確定要將 ${m} 的彙總存到試算表「流水」嗎？（會新增/更新一列彙總）`)) return;
+    if (!confirm(`確定要將 ${m} 的彙總存到試算表「流水」嗎？（同月份會更新，沒有才新增）`)) return;
 
     sumMsg.textContent = '存檔中...';
     try{
@@ -911,30 +909,21 @@
     }
   }
 
-  // 工具：把 Date 轉 input[type=date] 的 yyyy-mm-dd
-  function fmtDateForInput(v){
-    const d = (v instanceof Date) ? v : new Date(v);
-    if (isNaN(d.getTime())) return '';
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,'0');
-    const day = String(d.getDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
+  // ================= 初始化（同步試算表） =================
+  async function init(){
+    if (!summaryMonth.value) setSummaryMonthToThisMonth();
+    await Promise.all([
+      loadIncome(),
+      loadExpense(),
+      loadInstallments(),
+      loadSubscriptionsFromSheet(),
+      loadSettings()
+    ]);
+    // 初始化後總計先算一次（避免你看到 0）
+    await recalc();
   }
 
-  // 防止 dataset 文字破壞
-  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function unescapeHtml(s){ return String(s).replace(/&quot;/g,'"').replace(/&gt;/g,'>').replace(/&lt;/g,'<').replace(/&amp;/g,'&'); }
-
-  // 初始化：讀訂閱 / 設定 / 收入 / 支出 / 分期 / 總計
-  (async function init(){
-    if (!summaryMonth.value) summaryMonth.value = currentMonthKey();
-    await loadSettings();
-    await loadSubscriptionsFromSheet();
-    await loadIncomeList();
-    await loadExpenseList();
-    await loadInstallments();
-    await recalc(true);
-  })();
+  init();
 </script>
 </body>
 </html>
